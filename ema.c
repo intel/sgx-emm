@@ -745,6 +745,8 @@ int ema_do_uncommit(ema_t *node, size_t start, size_t end)
     size_t real_start = MAX(start, node->start_addr);
     size_t real_end = MIN(end, node->start_addr + node->size);
     int prot = node->si_flags & SGX_EMA_PROT_MASK;
+    if (prot == SGX_EMA_PROT_NONE)//need READ for trimming
+        ema_modify_permissions(node, start, end, SGX_EMA_PROT_READ);
     return ema_do_uncommit_real(node, real_start, real_end, prot);
 }
 static int ema_can_uncommit(ema_t* first, ema_t* last,
@@ -798,8 +800,10 @@ int ema_do_dealloc(ema_t *node, size_t start, size_t end)
     assert(node->eaccept_map);//TODO: refactor test/set bit_array
     size_t real_start = MAX(start, node->start_addr);
     size_t real_end = MIN(end, node->start_addr + node->size);
-
-    //clear protections flag
+    int prot = node->si_flags & SGX_EMA_PROT_MASK;
+    if (prot == SGX_EMA_PROT_NONE)//need READ for trimming
+        ema_modify_permissions(node, start, end, SGX_EMA_PROT_READ);
+    //clear protections flag for dealloc
     int ret = ema_do_uncommit_real (node, real_start, real_end, SGX_EMA_PROT_NONE);
     if (ret != 0)
         return ret;
@@ -915,7 +919,8 @@ int ema_modify_permissions(ema_t *node, size_t start, size_t end, int new_prot)
 
     for(size_t page = real_start; page < real_end; page += SGX_PAGE_SIZE)
     {
-        do_emodpe(&si, page);
+        if ((new_prot | prot) != prot)
+            do_emodpe(&si, page);
 
         // new permission is RWX, no EMODPR needed in untrusted part, hence no EACCEPT
         if ((new_prot & (SGX_EMA_PROT_WRITE | SGX_EMA_PROT_EXEC)) !=
