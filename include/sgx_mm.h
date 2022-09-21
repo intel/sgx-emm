@@ -228,11 +228,9 @@ extern "C"
      *        - SGX_EMA_PROT_WRITE: Pages may be written.
      *        - SGX_EMA_PROT_EXEC: Pages may be executed.
      * @retval 0 The operation was successful.
-     * @retval EACCES Original page type can not be changed to target type.
+     * @retval EACCES The page type does not allow the change.
      * @retval EINVAL The memory region was not allocated or outside enclave
      *                or other invalid parameters that are not supported.
-     * @retval EPERM The request permissions are not allowed, e.g., by target
-     * page type or SELinux policy.
      * @retval EFAULT All other errors.
      */
     int sgx_mm_modify_permissions(void* addr, size_t length, int prot);
@@ -244,10 +242,10 @@ extern "C"
      * @param[in] type page type, only SGX_EMA_PAGE_TYPE_TCS is supported.
      *
      * @retval 0 The operation was successful.
-     * @retval EACCES Original page type can not be changed to target type.
+     * @retval EACCES Original page type/permissions do not allow the change.
      * @retval EINVAL The memory region was not allocated or outside enclave
      *                or other invalid parameters that are not supported.
-     * @retval EPERM  Target page type is no allowed by this API, e.g., PT_TRIM,
+     * @retval EPERM  Target page type is not allowed by this API, e.g., PT_TRIM,
      *               PT_SS_FIRST, PT_SS_REST.
      * @retval EFAULT All other errors.
      */
@@ -282,9 +280,7 @@ extern "C"
      * @retval 0 The operation was successful.
      * @retval EINVAL Any page in requested address range is not previously
      * allocated, or outside the enclave address range.
-     * @retval EPERM Any page in requested range is previously committed.
-     * @retval EPERM The target permissions are not allowed by OS security
-     * policy, e.g., SELinux rules.
+     * @retval EACCES Any page in requested range is previously committed.
      * @retval EFAULT All other errors.
      */
     int sgx_mm_commit_data(void* addr, size_t length, uint8_t* data, int prot);

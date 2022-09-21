@@ -53,8 +53,6 @@
 // [start, end)
 struct ema_root_
 {
-    // size_t start;      // start address of the region
-    // size_t end;        // end address of the region
     ema_t* guard;
 };
 
@@ -942,20 +940,21 @@ int ema_change_to_tcs(ema_t* node, size_t addr)
     int prot = node->si_flags & SGX_EMA_PROT_MASK;
     int type = node->si_flags & SGX_EMA_PAGE_TYPE_MASK;
 
-    if (type == SGX_EMA_PAGE_TYPE_TCS)
-    {
-        return 0;
-    }
-    if (type != SGX_EMA_PAGE_TYPE_REG) return EACCES;
-
-    if (!(prot & SGX_EMA_PROT_READ_WRITE)) return EPERM;
-
     // page need to be already committed
     size_t pos = (addr - node->start_addr) >> SGX_PAGE_SHIFT;
     if (!node->eaccept_map || !bit_array_test(node->eaccept_map, pos))
     {
         return EACCES;
     }
+
+    if (type == SGX_EMA_PAGE_TYPE_TCS)
+    {
+        return 0; //already committed to TCS type
+    }
+
+    if (prot != SGX_EMA_PROT_READ_WRITE) return EACCES;
+    if (type != SGX_EMA_PAGE_TYPE_REG) return EACCES;
+
     int ret = sgx_mm_modify_ocall(addr, SGX_PAGE_SIZE, prot | type,
                                   prot | SGX_EMA_PAGE_TYPE_TCS);
     if (ret != 0)
@@ -1062,9 +1061,9 @@ static int ema_can_modify_permissions(ema_t* first, ema_t* last, size_t start,
         if (prev_end != curr->start_addr)  // there is a gap
             return EINVAL;
 
-        if (!(curr->si_flags & (SGX_EMA_PAGE_TYPE_REG))) return EPERM;
+        if (!(curr->si_flags & (SGX_EMA_PAGE_TYPE_REG))) return EACCES;
 
-        if ((curr->alloc_flags & (SGX_EMA_RESERVE))) return EPERM;
+        if ((curr->alloc_flags & (SGX_EMA_RESERVE))) return EACCES;
 
         size_t real_start = MAX(start, curr->start_addr);
         size_t real_end = MIN(end, curr->start_addr + curr->size);
@@ -1141,7 +1140,7 @@ static int ema_can_commit_data(ema_t* first, ema_t* last, size_t start,
 
             if (bit_array_test_range_any(curr->eaccept_map, pos_begin,
                                          pos_end - pos_begin))
-                return EINVAL;
+                return EACCES;
         }
         prev_end = curr->start_addr + curr->size;
         curr = curr->next;
