@@ -292,6 +292,7 @@ typedef int (*sgx_enclave_fault_handler_t)(const sgx_pfinfo *pfinfo, void *priva
  * @retval EEXIST Any page in range requested is in use and SGX_EMA_FIXED is set.
  * @retval EINVAL Invalid alignment bouandary, i.e., n < 12 in SGX_EMA_ALIGNED(n).
  * @retval ENOMEM Out of memory, or no free space to satisfy alignment boundary.
+ * @retval EFAULT All other errors.
  */
 int sgx_mm_alloc(void *addr, size_t length, int flags,
                  sgx_enclave_fault_handler_t handler, void *handler_private,
@@ -321,6 +322,7 @@ int sgx_mm_alloc(void *addr, size_t length, int flags,
  * @param[in] length Size in bytes of multiples of page size.
  * @retval 0 The operation was successful.
  * @retval EINVAL The address range is not allocated or outside enclave.
+ * @retval EFAULT All other errors.
  */
 int sgx_mm_uncommit(void *addr, size_t length);
 
@@ -331,6 +333,7 @@ int sgx_mm_uncommit(void *addr, size_t length);
  * @param[in] length Size in bytes of multiples of page size.
  * @retval 0 The operation was successful.
  * @retval EINVAL The address range is not allocated or outside enclave.
+ * @retval EFAULT All other errors.
  */
 int sgx_mm_dealloc(void *addr, size_t length);
 
@@ -348,11 +351,9 @@ int sgx_mm_dealloc(void *addr, size_t length);
  *        - SGX_EMA_PROT_WRITE: Pages may be written.
  *        - SGX_EMA_PROT_EXEC: Pages may be executed.
  * @retval 0 The operation was successful.
- * @retval EACCES Original page type can not be changed to target type.
+ * @retval EACCES The page type does not allow the change.
  * @retval EINVAL The memory region was not allocated or outside enclave
  *                or other invalid parameters that are not supported.
- * @retval EPERM The request permissions are not allowed, e.g., by target page type or
- *               SELinux policy.
  */
 int sgx_mm_modify_permissions(void *addr, size_t length, int prot);
 
@@ -363,11 +364,12 @@ int sgx_mm_modify_permissions(void *addr, size_t length, int prot);
  * @param[in] type page type, only SGX_EMA_PAGE_TYPE_TCS is supported.
  *
  * @retval 0 The operation was successful.
- * @retval EACCES Original page type can not be changed to target type.
+ * @retval EACCES Original page type/permissions do not allow the change
  * @retval EINVAL The memory region was not allocated or outside enclave
  *                or other invalid parameters that are not supported.
  * @retval EPERM  Target page type is not allowed by this API, e.g., PT_TRIM,
  *               PT_SS_FIRST, PT_SS_REST.
+ * @retval EFAULT All other errors.
  */
 int sgx_mm_modify_type(void *addr, size_t length, int type);
 
@@ -416,9 +418,8 @@ int sgx_mm_commit(void *addr, size_t length);
  * @retval 0 The operation was successful.
  * @retval EINVAL Any page in requested address range is not previously allocated, or
  *                outside the enclave address range.
- * @retval EPERM Any page in requested range is previously committed.
- * @retval EPERM The target permissions are not allowed by OS security policy,
- *                  e.g., SELinux rules.
+ * @retval EACCES Any page in requested range is previously committed.
+ * @retval EFAULT All other errors.
  */
 int sgx_mm_commit_data(void *addr, size_t length, uint8_t *data, int prot);
 
