@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2022 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,8 +49,6 @@
 #define SGX_EMA_STATE_PR       0x20UL
 #define UNUSED(x)              ((void)(x))
 
-// The head node of the list containing ema nodes belonging to the region
-// [start, end)
 struct ema_root_
 {
     ema_t* guard;
@@ -180,13 +178,6 @@ static bool ema_overlap_addr(const ema_t* ema, size_t addr)
     return false;
 }
 
-static bool ema_overlap_range(const ema_t* ema, size_t start, size_t end)
-{
-    if ((end <= ema->start_addr) || (start >= ema->start_addr + ema->size))
-        return false;
-    return true;
-}
-
 int ema_set_eaccept_full(ema_t* node)
 {
     if (!node->eaccept_map)
@@ -249,22 +240,6 @@ bool ema_page_committed(ema_t* ema, size_t addr)
 
     return bit_array_test(ema->eaccept_map,
                           (addr - ema->start_addr) >> SGX_PAGE_SHIFT);
-}
-
-// whether where is any ema node on the root that overlaps with region [addr,
-// addr+size)
-bool ema_exist_in(ema_root_t* root, size_t addr, size_t size)
-{
-    size_t end = addr + size;
-    for (ema_t* node = root->guard->next; node != root->guard;
-         node = node->next)
-    {
-        if (ema_overlap_range(node, addr, end))
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 // search for a node whose address range contains 'addr'
@@ -941,8 +916,7 @@ int ema_change_to_tcs(ema_t* node, size_t addr)
     int type = node->si_flags & SGX_EMA_PAGE_TYPE_MASK;
 
     // page need to be already committed
-    size_t pos = (addr - node->start_addr) >> SGX_PAGE_SHIFT;
-    if (!node->eaccept_map || !bit_array_test(node->eaccept_map, pos))
+    if (!ema_page_committed(node, addr))
     {
         return EACCES;
     }

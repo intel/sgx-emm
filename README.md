@@ -16,7 +16,7 @@ To port and integrate the EMM module into any SGX runtime, follow the [porting g
 
 The build instructions provided here are for developing and testing the EMM functionality with the Intel SDK and PSW build environment.
 
-**Note:** The EDMM patch series for upstream kernel at the time of writing (July/2022) are staged in the x86 tree [here](https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git/log/?h=x86/sgx). Current target for main kernel release is V5.20.
+**Note:** The EDMM patch series for upstream kernel at the time of writing (July/2022) are staged in the x86 tree [here](https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git/log/?h=x86/sgx). Current target for main kernel release is V6.0.
 The patches were reviewed on LKML in [this thread](https://lore.kernel.org/lkml/YnrllJ2OqmcqLUuv@kernel.org/T/).
 Please refer to the cover letter of the series for changes between versions.
 
@@ -122,12 +122,10 @@ Limitations of current implementation
 		- vDSO user handler should ensure it re-enters enclave with the original TCS and on the same OS thread.
 		- To avoid potential deadlocks, no other mutex/lock should be used in this path from user handler to first phase exception handler inside enclave.
 5. Not optimized for performance
-6. No extensive validation, failure or incorrect error codes possible for corner cases.
 
 Notes on Intel SDK specific implementation
 -----------------------------------------
 1. 	Intel SDK RTS abstraction layer mutex implementation is a spinlock because there is no built-in OCalls for wait/wake on OS event.
-2. 	Intel SDK signing tool reserves all unused address space as guard pages, leaving no space for user allocation. In this implementation, we simply changed tRTS to leave majority of that space as free. In future, we may need change the signing tool to encode this info in the metadata.
-3. 	Currently API tests are built with Intel SDK thus located in [Intel SDK repo](https://github.com/intel/linux-sgx/external/sgx-emm/api_tests). Though most of tests are RTS independent, the TCS related tests use hardcoded Intel thread context layout info.
+2. 	Currently API tests are built with Intel SDK thus located in [Intel SDK repo](https://github.com/intel/linux-sgx/external/sgx-emm/api_tests). Though most of tests are RTS independent, the TCS related tests use hardcoded Intel thread context layout info. The random allocation test cases use Intel SDK sgx_read_rand for random number generation.
 
 
