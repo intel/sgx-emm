@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2022 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,8 +52,6 @@ extern "C"
 #endif
 
     bool ema_root_empty(ema_root_t* r);
-    bool ema_exist_in(ema_root_t* r, size_t addr, size_t size);
-    bool ema_exist(size_t addr, size_t size);
 
 #ifndef NDEBUG
     ema_t* ema_next(ema_t* node);
@@ -73,8 +71,6 @@ extern "C"
 
     sgx_enclave_fault_handler_t ema_fault_handler(ema_t* node,
                                                   void** private_data);
-    bool is_ema_transition(ema_t* node);
-
     ema_t* ema_new(size_t addr, size_t size, uint32_t alloc_flags,
                    uint64_t si_flags, sgx_enclave_fault_handler_t handler,
                    void* private_data, ema_t* next_ema);

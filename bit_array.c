@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2022 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,8 +41,6 @@
 #define NUM_OF_BYTES(nbits) (ROUND_TO((nbits), 8) >> 3)
 #define TEST_BIT(A, p)      ((A)[((p) / 8)] & ((uint8_t)(1 << ((p) % 8))))
 #define SET_BIT(A, p)       ((A)[((p) / 8)] |= ((uint8_t)(1 << ((p) % 8))))
-#define CLEAR_BIT(A, p)     ((A)[((p) / 8)] &= (uint8_t)(~(1 << ((p) % 8))))
-#define FLIP_BIT(A, p)      ((A)[((p) / 8)] ^= (uint8_t)(1 << ((p) % 8)))
 
 // Create a new bit array to track the status of 'num' of bits.
 // The contents of the data is uninitialized.
