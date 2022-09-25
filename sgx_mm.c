@@ -381,13 +381,14 @@ int sgx_mm_enclave_pfhandler(const sgx_pfinfo* pfinfo)
     size_t addr = TRIM_TO((pfinfo->maddr), SGX_PAGE_SIZE);
     if (sgx_mm_mutex_lock(mm_lock)) return ret;
     ema_t* ema = search_ema(&g_user_ema_root, addr);
+    void* data = NULL;
+    sgx_enclave_fault_handler_t eh = NULL;
     if (!ema)
     {
         ema = search_ema(&g_rts_ema_root, addr);
         if (!ema) goto unlock;
     }
-    void* data = NULL;
-    sgx_enclave_fault_handler_t eh = ema_fault_handler(ema, &data);
+    eh = ema_fault_handler(ema, &data);
     if (eh)
     {
         // don't hold the lock as handlers can longjmp
