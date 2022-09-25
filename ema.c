@@ -851,7 +851,9 @@ int ema_do_dealloc(ema_t* node, size_t start, size_t end)
     int alloc_flag = node->alloc_flags & SGX_EMA_ALLOC_FLAGS_MASK;
     size_t real_start = MAX(start, node->start_addr);
     size_t real_end = MIN(end, node->start_addr + node->size);
+    int prot = node->si_flags & SGX_EMA_PROT_MASK;
     ema_t* tmp_node = NULL;
+    int ret = EFAULT;
 
     if (alloc_flag & SGX_EMA_RESERVE)
     {
@@ -860,11 +862,10 @@ int ema_do_dealloc(ema_t* node, size_t start, size_t end)
 
     // Only RESERVE region has no bit map allocated.
     assert(node->eaccept_map);
-    int prot = node->si_flags & SGX_EMA_PROT_MASK;
     if (prot == SGX_EMA_PROT_NONE)  // need READ for trimming
         ema_modify_permissions(node, start, end, SGX_EMA_PROT_READ);
     // clear protections flag for dealloc
-    int ret =
+    ret =
         ema_do_uncommit_real(node, real_start, real_end, SGX_EMA_PROT_NONE);
     if (ret != 0) return ret;
 
@@ -933,8 +934,7 @@ int ema_change_to_tcs(ema_t* node, size_t addr)
                                   prot | SGX_EMA_PAGE_TYPE_TCS);
     if (ret != 0)
     {
-        ret = EFAULT;
-        goto fail;
+        return EFAULT;
     }
 
     sec_info_t si SGX_SECINFO_ALIGN = {
@@ -947,13 +947,12 @@ int ema_change_to_tcs(ema_t* node, size_t addr)
     // operation succeeded, update ema node: state update, split
     ema_t* tcs = NULL;
     ret = ema_split_ex(node, addr, addr + SGX_PAGE_SIZE, &tcs);
-    if (ret) goto fail;
+    if (ret) return ret;
     assert(tcs);  // ema_split_ex should not return NULL if node!=NULL
 
     tcs->si_flags = (tcs->si_flags & (uint64_t)(~SGX_EMA_PAGE_TYPE_MASK) &
                      (uint64_t)(~SGX_EMA_PROT_MASK)) |
                     SGX_EMA_PAGE_TYPE_TCS | SGX_EMA_PROT_NONE;
-fail:
     return ret;
 }
 
@@ -970,8 +969,7 @@ int ema_modify_permissions(ema_t* node, size_t start, size_t end, int new_prot)
                                   prot | type, new_prot | type);
     if (ret != 0)
     {
-        ret = EFAULT;
-        goto fail;
+        return EFAULT;
     }
 
     sec_info_t si SGX_SECINFO_ALIGN = {
@@ -987,7 +985,7 @@ int ema_modify_permissions(ema_t* node, size_t start, size_t end, int new_prot)
             (SGX_EMA_PROT_WRITE | SGX_EMA_PROT_EXEC))
         {
             ret = do_eaccept(&si, page);
-            if (ret) goto fail;
+            if (ret) return ret;
         }
     }
 
@@ -997,7 +995,7 @@ int ema_modify_permissions(ema_t* node, size_t start, size_t end, int new_prot)
     {
         ema_t* tmp_node = NULL;
         ret = ema_split(node, real_start, false, &tmp_node);
-        if (ret) goto fail;
+        if (ret) return ret;
         assert(tmp_node);
         node = tmp_node;
     }
@@ -1006,7 +1004,7 @@ int ema_modify_permissions(ema_t* node, size_t start, size_t end, int new_prot)
     {
         ema_t* tmp_node = NULL;
         ret = ema_split(node, real_end, true, &tmp_node);
-        if (ret) goto fail;
+        if (ret) return ret;
         assert(tmp_node);
         node = tmp_node;
     }
@@ -1021,7 +1019,6 @@ int ema_modify_permissions(ema_t* node, size_t start, size_t end, int new_prot)
                                   type | SGX_EMA_PROT_NONE);
         if (ret) ret = EFAULT;
     }
-fail:
     return ret;
 }
 
