@@ -51,8 +51,6 @@ extern "C"
 {
 #endif
 
-    bool ema_root_empty(ema_root_t* r);
-
 #ifndef NDEBUG
     ema_t* ema_next(ema_t* node);
 #endif

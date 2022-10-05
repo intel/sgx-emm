@@ -112,15 +112,6 @@ void destroy_ema_root(ema_root_t* root)
     printf("Destroy %lu nodes on the root\n", index);
 #endif
 }
-bool ema_root_empty(ema_root_t* r)
-{
-    return r->guard == r->guard->next;
-}
-
-size_t ema_root_end(ema_root_t* r)
-{
-    return r->guard->prev->start_addr + r->guard->prev->size;
-}
 
 #ifdef TEST
 size_t ema_base(ema_t* node)
@@ -418,11 +409,6 @@ int ema_split_ex(ema_t* ema, size_t start, size_t end, ema_t** new_node)
     }
     *new_node = node;
     return 0;
-}
-
-ema_t* ema_merge(ema_t* lo_ema, ema_t* hi_ema)
-{
-    return NULL;
 }
 
 static size_t ema_aligned_end(ema_t* ema, size_t align)
