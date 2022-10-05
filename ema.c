@@ -266,6 +266,14 @@ ema_t* insert_ema(ema_t* new_node, ema_t* node)
     return new_node;
 }
 
+static void replace_ema(ema_t* new_node, ema_t* old_node)
+{
+    old_node->prev->next = new_node;
+    old_node->next->prev = new_node;
+    new_node->next = old_node->next;
+    new_node->prev = old_node->prev;
+}
+
 // Remove the 'node' from the list
 static ema_t* remove_ema(ema_t* node)
 {
@@ -584,9 +592,8 @@ ema_t* ema_new(size_t addr, size_t size, uint32_t alloc_flags,
                uint64_t si_flags, sgx_enclave_fault_handler_t handler,
                void* private_data, ema_t* next_ema)
 {
-    ema_t* node = (ema_t*)emalloc(sizeof(ema_t));
-    if (!node) return NULL;
-
+    // allocate a temp on stack, which is already allocated, i.e.,
+    // stack expansion won't create new nodes recursively.
     ema_t tmp = {
         .start_addr = addr,
         .size = size,
@@ -599,9 +606,20 @@ ema_t* ema_new(size_t addr, size_t size, uint32_t alloc_flags,
         .prev = NULL,
     };
 
-    *node = tmp;
-    node = insert_ema(node, next_ema);
-    return node;
+    // ensure region [start, start+size) is in the list so emalloc won't use it.
+    insert_ema(&tmp, next_ema);
+    ema_t* node = (ema_t*)emalloc(sizeof(ema_t));
+    if (node)
+    {
+        *node = tmp;
+        replace_ema(node, &tmp);
+        return node;
+    }
+    else
+    {
+        remove_ema(&tmp);
+        return NULL;
+    }
 }
 
 void ema_destroy(ema_t* ema)
@@ -865,8 +883,7 @@ int ema_do_dealloc(ema_t* node, size_t start, size_t end)
     if (prot == SGX_EMA_PROT_NONE)  // need READ for trimming
         ema_modify_permissions(node, start, end, SGX_EMA_PROT_READ);
     // clear protections flag for dealloc
-    ret =
-        ema_do_uncommit_real(node, real_start, real_end, SGX_EMA_PROT_NONE);
+    ret = ema_do_uncommit_real(node, real_start, real_end, SGX_EMA_PROT_NONE);
     if (ret != 0) return ret;
 
 split_and_destroy:
@@ -924,7 +941,7 @@ int ema_change_to_tcs(ema_t* node, size_t addr)
 
     if (type == SGX_EMA_PAGE_TYPE_TCS)
     {
-        return 0; //already committed to TCS type
+        return 0;  // already committed to TCS type
     }
 
     if (prot != SGX_EMA_PROT_READ_WRITE) return EACCES;
