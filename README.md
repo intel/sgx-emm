@@ -16,23 +16,20 @@ To port and integrate the EMM module into any SGX runtime, follow the [porting g
 
 The build instructions provided here are for developing and testing the EMM functionality with the Intel SDK and PSW build environment.
 
-**Note:** The EDMM patch series for upstream kernel at the time of writing (July/2022) are staged in the x86 tree [here](https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git/log/?h=x86/sgx). Current target for main kernel release is V6.0.
-The patches were reviewed on LKML in [this thread](https://lore.kernel.org/lkml/YnrllJ2OqmcqLUuv@kernel.org/T/).
-Please refer to the cover letter of the series for changes between versions.
-
-In case the kernel interfaces evolve, this EMM implementation and/or interface may change. However, the goal is to minimize the EMM public API changes so that impact to upper layer implementations are minimized. 
+**Note:**  The main-line kernel has builtin EDMM support since release v6.0.
+The original patches were reviewed on LKML in [this thread](https://lore.kernel.org/lkml/YnrllJ2OqmcqLUuv@kernel.org/T/).
 
 Prerequisites
 -------------------------------
 
 #### Build and install kernel with EDMM support
-On Ubuntu 18.04/20.04, follow the general instructions from [here](https://wiki.ubuntu.com/KernelTeam/GitKernelBuild) with these changes.
+On Ubuntu 18.04/20.04/22.04, follow the general instructions from [here](https://wiki.ubuntu.com/KernelTeam/GitKernelBuild) with these changes.
 
-- For step 1, clone this kernel repo and checkout the branch with sgx EDMM support
+- For step 1, clone the kernel repo and checkout a branch/tag with sgx EDMM support (v6.0 or later)
 ```
-$ git clone https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git
+$ git clone https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/
 $ cd linux
-$ git checkout x86/sgx
+$ git checkout v6.0
 ```
 
 - For step 6, modify .config to set "CONFIG_X86_SGX=y".
@@ -99,8 +96,16 @@ $ make
 $ ./test_mm_api
 # or run tests in loop in background
 $ nohup bash ./test_loop.sh 1000 &
-#check results in nohup log:
+# check results in nohup log:
 $ tail -f nohup.out
+```
+
+**Note:** On Ubuntu 22.04 or any distro with systemd v248 or later, /dev/sgx_enclave is only accessible by users in the group "sgx". The test or any enclave app should be run with a uid in the sgx group.
+```
+# check systemd version:
+$ systemctl --version
+# add sgx group to user if it's 248 or above:
+$ sudo usermod -a -G sgx <user name>
 ```
 
 Limitations of current implementation
