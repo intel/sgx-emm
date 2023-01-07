@@ -1198,17 +1198,28 @@ ema_t* ema_realloc_from_reserve_range(ema_t* first, ema_t* last, size_t start,
     }
 
     int ret = 0;
+    // Splitting nodes may add more emalloc reserve nodes.
+    // Those can be appended and move the "guard" which
+    // could be the last node
+    // We track the the last inclusive node.
+    ema_t* last_inclusive = last->prev;
     if (start > first->start_addr)
     {
+	ema_t* ofirst = first;
         ret = ema_split(first, start, false, &first);
-        if (ret) return NULL;
+	if (ret) return NULL;
+        //old first was split, we need update last_inclusive
+        //if the old first was also the last_inclusive
+        if (ofirst == last_inclusive)
+            last_inclusive = first;
     }
 
-    if (end < last->prev->start_addr + last->prev->size)
+    if (end < last_inclusive->start_addr + last_inclusive->size)
     {
-        ret = ema_split(last->prev, end, false, &last);
+        ret = ema_split(last_inclusive, end, false, &last);
         if (ret) return NULL;
-    }
+    } else
+	last = last_inclusive->next;
 
     assert(first->alloc_flags & SGX_EMA_RESERVE);
     assert(!first->eaccept_map);
