@@ -63,7 +63,6 @@ Build and Install SDK and PSW
 ```
 $ git clone https://github.com/intel/linux-sgx.git $repo_root
 $ cd $repo_root
-$ git checkout edmm_v5
 ```
 Following steps assume $repo_root is the top directory of the linux-sgx repo you cloned.
 
