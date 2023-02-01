@@ -597,7 +597,7 @@ ema_t* ema_new(size_t addr, size_t size, uint32_t alloc_flags,
     ema_t* node = (ema_t*)emalloc(sizeof(ema_t));
     if (node)
     {
-        ema_clone(node, &tmp);
+        *node = tmp;
         replace_ema(node, &tmp);
         return node;
     }
