@@ -58,7 +58,7 @@ extern "C"
      * implementation, e.g., failure in sgx_mm_register_pfhandler,
      * sgx_mm_mutex_create.
      */
-    int sgx_mm_init(size_t user_start, size_t user_end);
+    int sgx_mm_init(size_t user_start, size_t user_end, size_t init_reserve_size);
 
 #define SGX_EMA_SYSTEM SGX_EMA_ALLOC_FLAGS(0x80UL) /* EMA reserved by system \
                                                     */

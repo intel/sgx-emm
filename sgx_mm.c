@@ -445,7 +445,7 @@ unlock:
     return ret;
 }
 
-int sgx_mm_init(size_t user_base, size_t user_end)
+int sgx_mm_init(size_t user_base, size_t user_end, size_t init_reserve_size)
 {
     mm_lock = sgx_mm_mutex_create();
     if (!mm_lock) return EFAULT;
@@ -454,5 +454,5 @@ int sgx_mm_init(size_t user_base, size_t user_end)
     mm_user_end = user_end;
 
     if (!sgx_mm_register_pfhandler(sgx_mm_enclave_pfhandler)) return EFAULT;
-    return emalloc_init();
+    return emalloc_init(init_reserve_size);
 }
