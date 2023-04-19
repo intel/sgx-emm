@@ -451,12 +451,8 @@ static void* alloc_from_meta(size_t bsize)
     return block_to_payload(b);
 }
 
-int emalloc_init(size_t init_size)
+int emalloc_init_reserve(size_t init_size)
 {
-    for (int i = 0; i < num_exact_list; i++)
-    {
-        exact_block_list[i] = NULL;
-    }
     if (add_reserve(init_size)) return ENOMEM;
     reserve_size_increment = initial_reserve_size;
     return 0;
