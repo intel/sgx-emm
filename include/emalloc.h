@@ -38,7 +38,7 @@
 #define MIN(x, y)         (((x) > (y)) ? (y) : (x))
 #define MAX(x, y)         (((x) > (y)) ? (x) : (y))
 
-int emalloc_init_reserve(size_t);
+int emalloc_init_with_reserved_mem(size_t);
 void* emalloc(size_t);
 void efree(void* ptr);
 int can_erealloc(void* ptr);
