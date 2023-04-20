@@ -454,5 +454,5 @@ int sgx_mm_init(size_t user_base, size_t user_end)
     mm_user_end = user_end;
 
     if (!sgx_mm_register_pfhandler(sgx_mm_enclave_pfhandler)) return EFAULT;
-    return emalloc_init();
+    return 0;
 }
