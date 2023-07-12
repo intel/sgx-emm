@@ -257,7 +257,7 @@ static block_t* neighbor_right(block_t* me)
 static block_t* possibly_merge(block_t* b)
 {
     block_t* nr = neighbor_right(b);
-    while (nr && is_alloced(nr))
+    if (nr && !is_alloced(nr))
     {
         remove_from_lists(nr);
         b->header += block_size(nr);
