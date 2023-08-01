@@ -241,7 +241,7 @@ static void put_exact_block(block_t* b)
 static block_t* neighbor_right(block_t* me)
 {
     size_t end = block_end(me);
-    mm_reserve_t* r1 = find_used_in_reserve((size_t)me, end);
+    mm_reserve_t* r1 = find_used_in_reserve((size_t)me, block_size(me));
     if (!r1) return NULL;
     if (end == r1->base + r1->used) return NULL;
     mm_reserve_t* r2 = find_used_in_reserve(end, block_size((block_t*)end));
@@ -257,13 +257,14 @@ static block_t* neighbor_right(block_t* me)
 static block_t* possibly_merge(block_t* b)
 {
     block_t* nr = neighbor_right(b);
-    while (nr && is_alloced(nr))
+    while (nr && !is_alloced(nr))
     {
         remove_from_lists(nr);
         b->header += block_size(nr);
 #ifndef NDEBUG
         num_free_blocks--;
 #endif
+        nr = neighbor_right(nr);
     }
     return b;
 }
