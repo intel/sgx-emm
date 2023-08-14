@@ -127,27 +127,27 @@ uint64_t size_mask = ~((uint64_t)(exact_match_increment - 1));
 // Keep all the rest in one list
 static block_t* large_block_list = NULL;
 
-block_t* payload_to_block(void* p)
+block_t* payload_to_block(const void* p)
 {
     return (block_t*)(((size_t)p) - header_size);
 }
 
-void* block_to_payload(block_t* b)
+void* block_to_payload(const block_t* b)
 {
     return (void*)(b->payload);
 }
 
-bool is_alloced(block_t* b)
+bool is_alloced(const block_t* b)
 {
     return alloc_mask & b->header;
 }
 
-uint64_t block_size(block_t* b)
+uint64_t block_size(const block_t* b)
 {
     return b->header & size_mask;
 }
 
-size_t block_end(block_t* b)
+size_t block_end(const block_t* b)
 {
     return (size_t)(b) + block_size(b);
 }
@@ -189,7 +189,7 @@ static size_t get_list_idx(size_t size)
     return list;
 }
 
-static void remove_from_list(block_t* b, block_t** list_head)
+static void remove_from_list(const block_t* b, block_t** list_head)
 {
     size_t bsize = block_size(b);
     if (b == *list_head)
@@ -198,16 +198,25 @@ static void remove_from_list(block_t* b, block_t** list_head)
         if ((*list_head) && bsize > min_block_size)
             (*list_head)->next_prev[1] = NULL;
     }
-    else
+    else if (bsize > min_block_size)
     {
-        block_t* prev = NULL;
-        if (bsize > min_block_size) prev = b->next_prev[1];
+        block_t* prev = b->next_prev[1];
         block_t* next = b->next_prev[0];
         if (prev) prev->next_prev[0] = next;
         if (next) next->next_prev[1] = prev;
     }
+    else
+    {
+        block_t *current = *list_head;
+        while (current->next_prev[0] != b)
+        {
+            current = current->next_prev[0];
+        }
+        current->next_prev[0] = b->next_prev[0];
+    }
 }
-static void remove_from_lists(block_t* b)
+
+static void remove_from_lists(const block_t* b)
 {
     size_t bsize = block_size(b);
     if (bsize > max_exact_size)
@@ -238,7 +247,7 @@ static void put_exact_block(block_t* b)
 #endif
 }
 
-static block_t* neighbor_right(block_t* me)
+static block_t* neighbor_right(const block_t* me)
 {
     size_t end = block_end(me);
     mm_reserve_t* r1 = find_used_in_reserve((size_t)me, block_size(me));
@@ -501,7 +510,7 @@ static block_t* reconfigure_block(block_t* b)
     return b;
 }
 
-int can_erealloc(void* payload)
+int can_erealloc(const void* payload)
 {
     block_t* b = payload_to_block(payload);
     size_t bstart = (size_t)b;
@@ -513,6 +522,7 @@ int can_erealloc(void* payload)
     else
         return 1;
 }
+
 /*
  * This is an internal interface only used
  *  by emm, intentionally crash for any error or
