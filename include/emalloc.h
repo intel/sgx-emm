@@ -41,5 +41,5 @@
 int emalloc_init_with_reserved_mem(size_t);
 void* emalloc(size_t);
 void efree(void* ptr);
-int can_erealloc(void* ptr);
+int can_erealloc(const void* ptr);
 #endif
