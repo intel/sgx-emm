@@ -1,8 +1,8 @@
-Intel(R) Software Guard Extensions Enclave Memory Manager
+Intel(R) Software Guard Extensions Enclave Memory Manager (EMM)
 =============================================================
 Introduction
 ---------------------------------
-This is the implementation of the Enclave Memory Manager proposed in [this design doc](design_docs/SGX_EMM.md).
+This is the implementation of the Enclave Memory Manager (EMM) proposed in [this design doc](design_docs/SGX_EMM.md).
 
 The EMM public APIs defined in [sgx_mm.h](include/sgx_mm.h) are intended to encapsulate low level details
 of managing the basic EDMM flows for dynamically allocating/deallocating EPC pages, changing EPC page
